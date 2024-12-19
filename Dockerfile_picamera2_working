@@ -1,0 +1,28 @@
+FROM debian:bookworm
+
+# RUN apt update && apt install -y --no-install-recommends gnupg
+RUN apt update && apt install -y build-essential
+RUN apt-get update && apt-get install -y ffmpeg libsm6 libcap-dev libxext6 libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libavfilter-dev libswscale-dev libswresample-dev pkg-config
+
+RUN apt install libjpeg-dev zlib1g-dev -y
+
+RUN echo "deb http://archive.raspberrypi.org/debian/ bookworm main" > /etc/apt/sources.list.d/raspi.list \
+  && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 82B129927FA3303E
+
+RUN apt update && apt install -y \
+         python3-pip \
+         python3-venv \
+         python3-picamera2 \
+     && apt-get clean \
+     && apt-get autoremove \
+     && rm -rf /var/cache/apt/archives/* \
+     && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY ./requirements-pi2.txt /app
+RUN python3 -m venv --system-site-packages env
+RUN . env/bin/activate
+RUN ./env/bin/pip3 install -r requirements-pi2.txt
+COPY . .
+EXPOSE 5000 
+CMD ["./env/bin/python3", "app.py", "--host", "0.0.0.0"]
